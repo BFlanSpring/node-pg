@@ -111,7 +111,7 @@ router.put("/:id", async function (req, res, next) {
     if (!currPaidDate && paid) {
       paidDate = new Date();
     } else if (!paid) {
-      paidDate = null
+      paidDate = null;
     } else {
       paidDate = currPaidDate;
     }
@@ -123,7 +123,7 @@ router.put("/:id", async function (req, res, next) {
            RETURNING id, comp_code, amt, paid, add_date, paid_date`,
         [amt, paid, paidDate, id]);
 
-    return res.json({"invoice": result.rows[0]});
+    return res.json({invoice: result.rows[0]});
   }
 
   catch (err) {

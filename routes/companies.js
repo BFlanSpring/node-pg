@@ -52,23 +52,44 @@ router.get("/:code", async function (req, res, next) {
   }
 });
 
-router.post("/", async function (req, res, next) {
+router.post("/:code/industries/:industryCode", async function (req, res, next) {
   try {
-    let { name, description } = req.body;
-    let code = slugify(name, { lower: true });
+    const { code, industryCode } = req.params;
 
-    const result = await db.query(
-      `INSERT INTO companies (code, name, description) 
-       VALUES ($1, $2, $3) 
-       RETURNING code, name, description`,
-      [code, name, description]
+    const industryExists = await db.query(
+      `SELECT code FROM industries WHERE code = $1`,
+      [industryCode]
     );
 
-    return res.status(201).json({ company: result.rows[0] });
+    if (industryExists.rows.length === 0) {
+      throw new ExpressError(`No such industry: ${industryCode}`, 404);
+    }
+
+    const associationExists = await db.query(
+      `SELECT * FROM companies_industries 
+       WHERE comp_code = $1 AND industry_code = $2`,
+      [code, industryCode]
+    );
+
+    if (associationExists.rows.length > 0) {
+      throw new ExpressError(
+        `Industry ${industryCode} already associated with company ${code}`,
+        400
+      );
+    }
+
+    await db.query(
+      `INSERT INTO companies_industries (comp_code, industry_code) 
+       VALUES ($1, $2)`,
+      [code, industryCode]
+    );
+
+    return res.json({ message: 'Industry associated with the company' });
   } catch (err) {
     return next(err);
   }
 });
+
 
 router.put("/:code", async function (req, res, next) {
   try {
